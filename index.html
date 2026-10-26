@@ -15,7 +15,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=DM+Mono:wght@400;500&family=Courier+Prime:wght@400;700&family=Shippori+Mincho:wght@500;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=DM+Mono:wght@400;500&family=Courier+Prime:wght@400;700&family=Shippori+Mincho:wght@500;800&family=Fraunces:opsz,wght@9..144,500;9..144,800&family=Caveat:wght@700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 /* Layout concept: a diner check pad. The build screen is the pad you write on;
    the settle screen prints a receipt and tears it into one slip per person.
@@ -225,8 +225,8 @@ button { font-family: inherit; touch-action: manipulation; -webkit-tap-highlight
 /* ---------- settle screen ---------- */
 
 /* receipt paper with a torn, zigzag bottom edge */
-.receipt, .slip { position: relative; background: var(--paper); color: var(--paper-ink); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.22)); }
-.receipt::after, .slip::after {
+.receipt, .slip, .pcard { position: relative; background: var(--paper); color: var(--paper-ink); filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.22)); }
+.receipt::after, .slip::after, .pcard::after {
   content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 10px; background: var(--paper);
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='10' viewBox='0 0 20 10'%3E%3Cpath d='M0 0h20L10 10z'/%3E%3C/svg%3E") repeat-x 0 0 / 20px 10px;
           mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='10' viewBox='0 0 20 10'%3E%3Cpath d='M0 0h20L10 10z'/%3E%3C/svg%3E") repeat-x 0 0 / 20px 10px;
@@ -466,34 +466,101 @@ button, .btn, .link { -webkit-user-select: none; user-select: none; -webkit-touc
 .stub.paid .stub-in { animation: stubIn 0.3s ease; }
 @keyframes stubIn { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
 
-/* paper picker */
-.papers { display: flex; align-items: center; gap: 6px; overflow-x: auto; margin: 0 0 16px; padding: 2px 2px 4px; scrollbar-width: none; }
-.papers::-webkit-scrollbar { display: none; }
-.pp-l { flex: none; margin-right: 2px; font: 600 11px var(--font); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink2); }
-.pp { flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 9px; border: 0; border-radius: 999px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--line2); color: var(--ink); font: 600 14px var(--font); cursor: pointer; }
-.pp[aria-pressed="true"] { background: var(--btn); color: var(--btn-fg); box-shadow: none; }
-.sw { width: 22px; height: 22px; border-radius: 6px; box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.28); }
-.sw[data-sw="classic"] { background: #FFFFFE; }
-.sw[data-sw="diner"] { background: repeating-linear-gradient(90deg, #C62828 0 4px, #FBF3DD 4px 8px) top / 100% 6px no-repeat, #FBF3DD; }
-.sw[data-sw="sushi"] { background: radial-gradient(circle at 68% 38%, #C41E3A 0 4px, transparent 4.5px), #F6F1E4; }
-.sw[data-sw="thermal"] { background: #E6E6E3; }
-.sw[data-sw="neon"] { background: linear-gradient(135deg, #14111F, #4B2C9B); box-shadow: inset 0 0 0 1.5px #FF2E93; }
+/* ===== receipt paper: a hidden sheet, opened by holding the receipt or the small icon on it ===== */
+.receipt { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; transition: transform 0.35s ease; }
+.receipt.pressing { transform: scale(0.985); }
+.r-top { align-items: center; }
+.r-tr { display: inline-flex; align-items: center; gap: 2px; }
+.pp-dot { flex: none; display: grid; place-items: center; width: 44px; height: 44px; margin: -14px -14px -14px 0; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--paper-ink2); opacity: 0.6; cursor: pointer; }
+.pp-dot:hover, .pp-dot:focus-visible { opacity: 1; }
 
-/* ===== receipt paper themes (tokens only change on .wrap, so light/dark both work) ===== */
-.wrap[data-paper="diner"] { --paper: #FBF3DD; --paper-ink: #1D1A16; --paper-ink2: #675A46; --paper-line: #D2AF9F; --hi: #FFD84D; --stamp: #C62828; }
-.wrap[data-paper="diner"] :is(.receipt, .slip) { --font: 'Courier Prime', 'Courier New', ui-monospace, monospace; --mono: 'Courier Prime', 'Courier New', ui-monospace, monospace; font-family: var(--font); }
-.wrap[data-paper="diner"] :is(.receipt, .slip)::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: repeating-linear-gradient(90deg, #C62828 0 14px, #FBF3DD 14px 28px); border-radius: 12px 12px 0 0; }
+body.sheet-open { overflow: hidden; }
+.sheet { position: fixed; inset: 0; z-index: 75; }
+.sheet-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.4); opacity: 0; transition: opacity 0.24s ease; }
+.sheet-panel { position: absolute; left: 0; right: 0; bottom: 0; width: min(100%, 640px); margin: 0 auto; max-height: min(80vh, 680px); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); color: var(--ink); border-radius: 22px 22px 0 0; box-shadow: 0 -14px 40px -14px rgba(0, 0, 0, 0.5);
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  transform: translateY(100%); transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.sheet-panel:focus { outline: none; }
+.sheet.on .sheet-bg { opacity: 1; }
+.sheet.on .sheet-panel { transform: none; }
+.grab { width: 40px; height: 5px; border-radius: 3px; background: var(--line2); margin: 0 auto 12px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sheet-head h2 { margin: 0; font: 800 20px var(--font); letter-spacing: -0.02em; }
+.sheet .hint { margin: 4px 0 0; }
+.pgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 10px; margin-top: 16px; }
+@media (min-width: 540px) { .pgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.popt { display: flex; flex-direction: column; align-items: stretch; gap: 10px; min-width: 0; min-height: 44px; margin: 0; padding: 8px 8px 6px; border: 0; border-radius: 14px; background: transparent; color: var(--ink); font: 600 13px var(--font); text-align: center; cursor: pointer; }
+.popt:hover { background: var(--field); }
+.popt[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
+.pc-name { display: block; padding-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.popt[aria-pressed="true"] .pc-name::before { content: "\2713\00a0"; }
+.pcard { display: block; min-width: 0; border-radius: 9px 9px 0 0; padding: 10px 9px 11px; text-align: left; font-family: var(--font); filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.22)); overflow: visible; }
+.pcard::after { height: 6px; -webkit-mask-size: 12px 6px; mask-size: 12px 6px; }
+.pc-top { display: block; font: 500 8px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--paper-ink2); }
+.pc-num { display: inline-block; margin: 7px 0 7px; padding: 0 0.06em; font: 800 26px/1 var(--font); letter-spacing: -0.04em; background: linear-gradient(transparent 58%, var(--hi) 58% 90%, transparent 90%); }
+.pc-line { display: flex; justify-content: space-between; gap: 4px; padding-top: 6px; border-top: 1.5px dashed var(--paper-line); font: 500 9px var(--mono); color: var(--paper-ink2); white-space: nowrap; overflow: hidden; }
 
-.wrap[data-paper="sushi"] { --paper: #F6F1E4; --paper-ink: #1B1B1B; --paper-ink2: #655B50; --paper-line: #C4B8A2; --hi: #F2B8B0; --stamp: #C41E3A; }
-.wrap[data-paper="sushi"] :is(.receipt, .slip) { --font: 'Shippori Mincho', 'Hiragino Mincho ProN', Georgia, serif; border-top: 6px double #C41E3A; font-family: var(--font); }
+/* ===== the papers. Tokens sit on .wrap (or on the preview card), so light and dark mode both work.
+   Every paper keeps body text at 7:1 or more and secondary text and stamps at 5:1 or more. ===== */
 
-.wrap[data-paper="thermal"] { --paper: #E6E6E3; --paper-ink: #262626; --paper-ink2: #5A5A57; --paper-line: #B2B2AE; --hi: #CBCBC6; --stamp: #3A3A3A; }
-.wrap[data-paper="thermal"] :is(.receipt, .slip) { --font: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace; --mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace; background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0 1px, transparent 1px 3px); font-family: var(--font); }
+/* Letterpress: cotton card, navy ink, a pressed hairline frame */
+[data-paper="letterpress"] { --paper: #F6F1E7; --paper-ink: #1B2340; --paper-ink2: #4F5670; --paper-line: #CDC3AF; --hi: #CFDAF0; --stamp: #B23A2E; }
+.wrap[data-paper="letterpress"] :is(.receipt, .slip), .pcard[data-paper="letterpress"] { --font: 'Fraunces', 'Iowan Old Style', Georgia, serif; font-family: var(--font); }
+.wrap[data-paper="letterpress"] :is(.receipt, .slip)::before, .pcard[data-paper="letterpress"]::before { content: ""; position: absolute; inset: 7px 7px 0; border: 1px solid rgba(27, 35, 64, 0.2); border-bottom: 0; border-radius: 8px 8px 0 0; pointer-events: none; }
+.pcard[data-paper="letterpress"]::before { inset: 4px 4px 0; border-radius: 6px 6px 0 0; }
+.wrap[data-paper="letterpress"] .hero-num, .pcard[data-paper="letterpress"] .pc-num { text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85), 0 -1px 0 rgba(27, 35, 64, 0.18); }
 
-.wrap[data-paper="neon"] { --paper: #14111F; --paper-ink: #F4F1FF; --paper-ink2: #BDB4DE; --paper-line: #6A58C4; --hi: #E0287F; --stamp: #39FF88; }
-.wrap[data-paper="neon"] :is(.receipt, .slip) { filter: drop-shadow(0 0 2px rgba(150, 120, 255, 0.95)) drop-shadow(0 0 12px rgba(123, 92, 255, 0.55)); }
-.wrap[data-paper="neon"] .hero-num { text-shadow: 0 0 14px rgba(255, 46, 147, 0.7); }
+/* Sage: soft green, honey highlight, italic serif numbers */
+[data-paper="sage"] { --paper: #E4E9DA; --paper-ink: #1C2A1E; --paper-ink2: #46553F; --paper-line: #AEBB9F; --hi: #F2D68E; --stamp: #8A3B1C; }
+.wrap[data-paper="sage"] .hero-num, .pcard[data-paper="sage"] .pc-num, .wrap[data-paper="sage"] :is(.slip-name, .slip-total) { font-family: 'Instrument Serif', 'Iowan Old Style', Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+
+/* Carbon copy: the pink duplicate of a guest check, blue carbon ink, a handwritten total */
+[data-paper="carbon"] { --paper: #F8DFE3; --paper-ink: #22306B; --paper-ink2: #474C7B; --paper-line: #D8A5AF; --hi: #FFF1A6; --stamp: #A3213A; }
+.wrap[data-paper="carbon"] :is(.receipt, .slip)::before, .pcard[data-paper="carbon"]::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: #22306B; border-radius: 12px 12px 0 0; }
+.pcard[data-paper="carbon"]::before { height: 4px; border-radius: 9px 9px 0 0; }
+.wrap[data-paper="carbon"] .hero-num, .pcard[data-paper="carbon"] .pc-num, .wrap[data-paper="carbon"] :is(.slip-name, .slip-total) { font-family: 'Caveat', 'Bradley Hand', 'Segoe Print', cursive; font-weight: 700; letter-spacing: 0; text-shadow: 0 0 1px rgba(34, 48, 107, 0.45); }
+
+/* Riso: off-white stock, risograph blue, a fluoro pink layer printed slightly off */
+[data-paper="riso"] { --paper: #F4F0E5; --paper-ink: #1D3C8F; --paper-ink2: #45507A; --paper-line: #E8A9CB; --hi: #FFE45C; --stamp: #C4005C; }
+.wrap[data-paper="riso"] :is(.receipt, .slip), .pcard[data-paper="riso"] { background-image: radial-gradient(rgba(255, 72, 176, 0.16) 0.8px, transparent 1.1px); background-size: 5px 5px; }
+.wrap[data-paper="riso"] .hero-num, .pcard[data-paper="riso"] .pc-num { text-shadow: 3px 2px 0 rgba(255, 72, 176, 0.8); }
+.pcard[data-paper="riso"] .pc-num { text-shadow: 2px 1.5px 0 rgba(255, 72, 176, 0.8); }
+
+/* Kraft: brown paper bag, masking-tape highlight, rubber-stamp red */
+[data-paper="kraft"] { --paper: #D2B48C; --paper-ink: #22160A; --paper-ink2: #45311C; --paper-line: #A0805A; --hi: #F3E9D2; --stamp: #7E1C14; }
+.wrap[data-paper="kraft"] :is(.receipt, .slip), .pcard[data-paper="kraft"] { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.24 0 0 0 0 0.15 0 0 0 0 0.05 0 0 0 0.28 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* Diner: guest-check cream with a red-and-white band */
+[data-paper="diner"] { --paper: #FBF3DD; --paper-ink: #1D1A16; --paper-ink2: #675A46; --paper-line: #D2AF9F; --hi: #FFD84D; --stamp: #C62828; }
+.wrap[data-paper="diner"] :is(.receipt, .slip), .pcard[data-paper="diner"] { --font: 'Courier Prime', 'Courier New', ui-monospace, monospace; --mono: 'Courier Prime', 'Courier New', ui-monospace, monospace; font-family: var(--font); }
+.wrap[data-paper="diner"] :is(.receipt, .slip)::before, .pcard[data-paper="diner"]::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: repeating-linear-gradient(90deg, #C62828 0 14px, #FBF3DD 14px 28px); border-radius: 12px 12px 0 0; }
+.pcard[data-paper="diner"]::before { height: 5px; background: repeating-linear-gradient(90deg, #C62828 0 7px, #FBF3DD 7px 14px); border-radius: 9px 9px 0 0; }
+
+/* Sushi bar: washi cream, mincho type, a red double rule */
+[data-paper="sushi"] { --paper: #F6F1E4; --paper-ink: #1B1B1B; --paper-ink2: #655B50; --paper-line: #C4B8A2; --hi: #F2B8B0; --stamp: #C41E3A; }
+.wrap[data-paper="sushi"] :is(.receipt, .slip), .pcard[data-paper="sushi"] { --font: 'Shippori Mincho', 'Hiragino Mincho ProN', Georgia, serif; border-top: 6px double #C41E3A; font-family: var(--font); }
+.pcard[data-paper="sushi"] { border-top-width: 4px; }
+
+/* Thermal: grey till roll */
+[data-paper="thermal"] { --paper: #E6E6E3; --paper-ink: #262626; --paper-ink2: #5A5A57; --paper-line: #B2B2AE; --hi: #CBCBC6; --stamp: #3A3A3A; }
+.wrap[data-paper="thermal"] :is(.receipt, .slip), .pcard[data-paper="thermal"] { --font: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace; --mono: 'DM Mono', ui-monospace, 'SF Mono', Menlo, monospace; background-image: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.03) 0 1px, transparent 1px 3px); font-family: var(--font); }
+
+/* Neon: a lit sign after closing */
+[data-paper="neon"] { --paper: #14111F; --paper-ink: #F4F1FF; --paper-ink2: #BDB4DE; --paper-line: #6A58C4; --hi: #E0287F; --stamp: #39FF88; }
+.wrap[data-paper="neon"] :is(.receipt, .slip), .pcard[data-paper="neon"] { filter: drop-shadow(0 0 2px rgba(150, 120, 255, 0.95)) drop-shadow(0 0 12px rgba(123, 92, 255, 0.55)); }
+.wrap[data-paper="neon"] .hero-num, .pcard[data-paper="neon"] .pc-num { text-shadow: 0 0 14px rgba(255, 46, 147, 0.7); }
 .wrap[data-paper="neon"] .stub { background: color-mix(in srgb, #7B5CFF 14%, var(--paper)); }
+
+/* Gilded: bottle-green card, ivory ink, a gold-foil total and frame */
+[data-paper="gilded"] { --paper: #0F1915; --paper-ink: #F3EAD5; --paper-ink2: #CDBF98; --paper-line: #5C5437; --hi: #5A4719; --stamp: #E3C67C; }
+.wrap[data-paper="gilded"] :is(.receipt, .slip), .pcard[data-paper="gilded"] { --font: 'Fraunces', 'Iowan Old Style', Georgia, serif; font-family: var(--font); filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.45)); }
+.wrap[data-paper="gilded"] :is(.receipt, .slip)::before, .pcard[data-paper="gilded"]::before { content: ""; position: absolute; inset: 7px 7px 0; border: 1px solid rgba(227, 198, 124, 0.45); border-bottom: 0; border-radius: 8px 8px 0 0; pointer-events: none; }
+.pcard[data-paper="gilded"]::before { inset: 4px 4px 0; border-radius: 6px 6px 0 0; }
+.wrap[data-paper="gilded"] .hero-num, .pcard[data-paper="gilded"] .pc-num { background: linear-gradient(100deg, #C8963A 0%, #F6E3A6 38%, #D9B25E 58%, #B88A35 100%); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+@media (forced-colors: active) {
+  .wrap[data-paper="gilded"] .hero-num, .pcard[data-paper="gilded"] .pc-num { background: none; color: CanvasText; -webkit-text-fill-color: CanvasText; }
+}
 
 /* the PAID stamp lands on the torn stub instead of covering the amounts */
 .slip .stamp { top: auto; bottom: 10px; right: 14px; }
@@ -509,6 +576,7 @@ button, .btn, .link { -webkit-user-select: none; user-select: none; -webkit-touc
 <button type="button" class="undo" id="undo" data-act="undo" hidden></button>
 <div class="tip" id="tip" role="tooltip"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sheet" id="sheet" hidden></div>
 <script>
 /* Splitsies money engine.
    Every amount is an integer number of cents. No floating point touches money.
@@ -861,7 +929,8 @@ var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-m
 var state;
 var ui = { pendingRemove: null, pendingNew: false, animateIn: false, raf: 0, toastT: 0, pendT: 0,
   activeItem: null, qaText: '', qaNote: null, grpForm: false, prevScreen: 'build', undo: [], undoT: 0,
-  dragEnd: 0, tipTarget: null, prevTotals: {}, pendDel: null, pendRestore: false, pendDelT: 0, bkText: '', bkNote: null };
+  dragEnd: 0, tipTarget: null, prevTotals: {}, pendDel: null, pendRestore: false, pendDelT: 0, bkText: '', bkNote: null,
+  lpAt: 0, sheetT: 0, sheetReturn: null, sheetOn: false, hintT: 0, kbUsed: false };
 var dom = {};
 
 var ICON_CHECK = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5l2.8 2.8L11 4.5"/></svg>';
@@ -944,8 +1013,9 @@ function exampleState() {
 /* ---------- storage (a convenience only; the page works without it) ---------- */
 var KEYS = { bill: 'splitsies:v1', prefs: 'splitsies:prefs', friends: 'splitsies:friends', groups: 'splitsies:groups', hist: 'splitsies:history' };
 var MAX_HIST = 40, MAX_FRIENDS = 60, MAX_GROUPS = 12, MAX_ITEMS = 200;
-var PAPERS = ['classic', 'diner', 'sushi', 'thermal', 'neon'];
-var prefs = { view: 'auto', shape: 'round', paper: 'classic' };
+// In the order the paper sheet shows them: light papers first, dark ones last.
+var PAPERS = ['classic', 'letterpress', 'sage', 'carbon', 'riso', 'kraft', 'diner', 'sushi', 'thermal', 'neon', 'gilded'];
+var prefs = { view: 'auto', shape: 'round', paper: 'classic', hinted: false };
 
 function lsGet(key) { try { var r = localStorage.getItem(key); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
 function lsSet(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); return true; } catch (e) { return false; } }
@@ -1025,7 +1095,8 @@ function cleanPrefs(p) {
   p = p && typeof p === 'object' ? p : {};
   return { view: ['auto', 'chips', 'table'].indexOf(p.view) >= 0 ? p.view : 'auto',
            shape: p.shape === 'rect' ? 'rect' : 'round',
-           paper: PAPERS.indexOf(p.paper) >= 0 ? p.paper : 'classic' };
+           paper: PAPERS.indexOf(p.paper) >= 0 ? p.paper : 'classic',
+           hinted: p.hinted === true };
 }
 function loadPrefs() { prefs = cleanPrefs(lsGet(KEYS.prefs)); }
 function savePrefs() { lsSet(KEYS.prefs, prefs); }
@@ -1967,14 +2038,122 @@ function copyFrom(ta, doneMsg) {
 }
 
 /* ---------- receipt paper ---------- */
-var PAPER_NAMES = { classic: 'Classic', diner: 'Diner', sushi: 'Sushi bar', thermal: 'Thermal', neon: 'Neon' };
+// The papers live in a sheet that opens when you press and hold the receipt
+// (or tap the small paper icon in its corner), so they stay out of the way.
+var PAPER_NAMES = {
+  classic: 'Classic', letterpress: 'Letterpress', sage: 'Sage', carbon: 'Carbon copy', riso: 'Riso',
+  kraft: 'Kraft', diner: 'Diner', sushi: 'Sushi bar', thermal: 'Thermal', neon: 'Neon', gilded: 'Gilded'
+};
+var ICON_PAPERS = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="4.5" width="8" height="9" rx="1.5"/><path d="M5.5 2.5h6.5a1.5 1.5 0 0 1 1.5 1.5v7.5"/></svg>';
 function applyPaper() { if (dom.wrap) dom.wrap.setAttribute('data-paper', prefs.paper); }
-function paperPickerHTML() {
-  var h = '<div class="papers" role="group" aria-label="Receipt paper"><span class="pp-l">Paper</span>';
+function paperDotHTML() {
+  return '<button type="button" class="pp-dot" data-act="paper-open" data-k="pp-open" aria-haspopup="dialog" aria-label="Change receipt paper">' + ICON_PAPERS + '</button>';
+}
+function sheetHTML() {
+  var h = '<div class="sheet-bg" data-act="paper-close"></div>' +
+    '<div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="sheet-h" tabindex="-1">' +
+    '<div class="grab" aria-hidden="true"></div>' +
+    '<div class="sheet-head"><h2 id="sheet-h">Receipt paper</h2><button type="button" class="btn small" data-act="paper-close" data-k="pp-done">Done</button></div>' +
+    '<p class="hint">Changes how the receipt and slips look. The math stays the same.</p><div class="pgrid">';
   PAPERS.forEach(function (p) {
-    h += '<button type="button" class="pp" data-act="paper" data-v="' + p + '" data-k="pp:' + p + '" aria-pressed="' + (prefs.paper === p) + '"><i class="sw" data-sw="' + p + '" aria-hidden="true"></i>' + esc(PAPER_NAMES[p]) + '</button>';
+    h += '<button type="button" class="popt" data-act="paper" data-v="' + p + '" data-k="pp:' + p + '" aria-pressed="' + (prefs.paper === p) + '">' +
+      '<span class="pcard" data-paper="' + p + '" aria-hidden="true"><span class="pc-top">Table 4</span><span class="pc-num">$84</span>' +
+      '<span class="pc-line"><span>Pad thai</span><span>17.00</span></span></span><span class="pc-name">' + esc(PAPER_NAMES[p]) + '</span></button>';
   });
-  return h + '</div>';
+  return h + '</div></div>';
+}
+function sheetOpen() { return !!ui.sheetOn; }
+function openPaperSheet() {
+  if (!dom.sheet || sheetOpen()) return;
+  hideTip();
+  clearTimeout(ui.sheetT);              // a close still animating out is cancelled
+  ui.sheetOn = true;
+  ui.sheetReturn = document.activeElement;
+  dom.sheet.innerHTML = sheetHTML();
+  dom.sheet.hidden = false;
+  document.body.classList.add('sheet-open');
+  raf(function () { raf(function () { if (ui.sheetOn) dom.sheet.classList.add('on'); }); });
+  // With a keyboard, focus moves onto the current paper. With touch nothing gets a focus ring;
+  // the panel takes focus quietly so Tab and Escape still work.
+  var first = ui.kbUsed ? ($('.popt[aria-pressed="true"]', dom.sheet) || $('.popt', dom.sheet)) : $('.sheet-panel', dom.sheet);
+  if (first) { try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); } }
+}
+function closePaperSheet() {
+  if (!sheetOpen()) return;
+  ui.sheetOn = false;
+  dom.sheet.classList.remove('on');
+  document.body.classList.remove('sheet-open');
+  clearTimeout(ui.sheetT);
+  var done = function () { dom.sheet.hidden = true; dom.sheet.innerHTML = ''; };
+  if (reduceMotion) done(); else ui.sheetT = setTimeout(done, 260);
+  var back = ui.sheetReturn;
+  ui.sheetReturn = null;
+  if (!ui.kbUsed) { if (document.activeElement && dom.sheet.contains(document.activeElement)) document.activeElement.blur(); return; }
+  if (back && back !== document.body && back.isConnected && back.focus && !dom.sheet.contains(back)) { try { back.focus({ preventScroll: true }); } catch (e) { back.focus(); } }
+  else { var dot = $('.pp-dot', dom.settle); if (dot) { try { dot.focus({ preventScroll: true }); } catch (e2) { dot.focus(); } } }
+}
+function setPaper(v) {
+  if (PAPERS.indexOf(v) < 0) return;
+  prefs.paper = v; savePrefs(); applyPaper();
+  if (dom.sheet) dom.sheet.querySelectorAll('[data-act="paper"]').forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-v') === v)); });
+}
+// Escape closes the sheet; Tab stays inside it while it is open.
+function sheetKey(e) {
+  if (!sheetOpen()) return;
+  if (e.key === 'Escape') { e.preventDefault(); closePaperSheet(); return; }
+  if (e.key !== 'Tab') return;
+  var f = Array.prototype.slice.call(dom.sheet.querySelectorAll('button'));
+  if (!f.length) return;
+  var a = document.activeElement, i = f.indexOf(a);
+  if (e.shiftKey && (i <= 0)) { e.preventDefault(); f[f.length - 1].focus(); }
+  else if (!e.shiftKey && (i === f.length - 1 || i < 0)) { e.preventDefault(); f[0].focus(); }
+}
+
+/* press and hold the receipt */
+var lp = { el: null, x: 0, y: 0, t: 0, t1: 0 };
+function lpStart(e) {
+  if (e.button > 0 || sheetOpen()) return;
+  var t = e.target;
+  var r = t && t.closest ? t.closest('#receipt') : null;
+  if (!r || t.closest('button, a, input, textarea')) return;
+  lpCancel();
+  lp.el = r; lp.x = e.clientX; lp.y = e.clientY;
+  lp.t1 = setTimeout(function () { if (lp.el) lp.el.classList.add('pressing'); }, 150);
+  lp.t = setTimeout(lpFire, 550);
+}
+function lpMove(e) {
+  if (lp.el && Math.abs(e.clientX - lp.x) + Math.abs(e.clientY - lp.y) > 10) lpCancel();
+}
+function lpCancel() {
+  clearTimeout(lp.t); clearTimeout(lp.t1);
+  if (lp.el) lp.el.classList.remove('pressing');
+  lp.el = null;
+}
+function lpFire() {
+  if (!lp.el || !lp.el.isConnected) { lpCancel(); return; }
+  lpCancel();
+  ui.lpAt = Date.now();
+  try { if (navigator.vibrate) navigator.vibrate(10); } catch (e) { /* not supported */ }
+  openPaperSheet();
+}
+function bindPaper() {
+  dom.settle.addEventListener('pointerdown', lpStart);
+  dom.settle.addEventListener('pointermove', lpMove);
+  dom.settle.addEventListener('pointerup', lpCancel);
+  dom.settle.addEventListener('pointercancel', lpCancel);
+  dom.settle.addEventListener('pointerleave', lpCancel);
+  window.addEventListener('scroll', lpCancel, { passive: true });
+  // Desktop right-click and Android long-press send contextmenu; treat it as the same gesture.
+  dom.settle.addEventListener('contextmenu', function (e) {
+    var r = e.target && e.target.closest ? e.target.closest('#receipt') : null;
+    if (!r) return;
+    e.preventDefault();
+    if (Date.now() - ui.lpAt > 800) { lpCancel(); ui.lpAt = Date.now(); openPaperSheet(); }
+  });
+  document.addEventListener('keydown', sheetKey);
+  // Remember whether the last input was a keyboard, so focus only moves for keyboard users.
+  document.addEventListener('keydown', function (e) { if (/^(Tab|Enter|Escape| |ArrowUp|ArrowDown|ArrowLeft|ArrowRight)$/.test(e.key)) ui.kbUsed = true; }, true);
+  document.addEventListener('pointerdown', function () { ui.kbUsed = false; }, true);
 }
 
 /* ---------- keyboard + touch niceties ---------- */
@@ -2253,9 +2432,8 @@ function renderSettle() {
       'It is shown in grey below, so nothing is hidden. <button type="button" class="link" data-act="go-build" data-k="fix">Fix it on the bill</button></div></div>';
   }
   var nItems = res.items.filter(function (x) { return x.cents > 0; }).length;
-  h += paperPickerHTML();
-  h += '<section class="receipt' + (st.settled ? ' settled' : '') + '" id="receipt"><div class="r-top"><span>Splitsies · ' + esc(longDate()) + '</span><span>' +
-    esc(plural(state.people.length, 'person', 'people')) + '</span></div>' +
+  h += '<section class="receipt' + (st.settled ? ' settled' : '') + '" id="receipt"><div class="r-top"><span>Splitsies · ' + esc(longDate()) + '</span><span class="r-tr"><span>' +
+    esc(plural(state.people.length, 'person', 'people')) + '</span>' + paperDotHTML() + '</span></div>' +
     '<div class="hero"><span class="hero-num" id="hero">' + fmt(res.grand) + '</span></div>' +
     '<p class="r-sub">' + esc(plural(nItems, 'item', 'items')) + ' · tax &amp; tip included</p><hr class="r-rule">' + ledgerHTML(res) +
     '<p class="r-note">Tax and tip are shared by what each person ordered. When a split doesn’t divide evenly, spare pennies rotate between people so nobody always pays extra.</p>' +
@@ -2314,6 +2492,12 @@ function renderSettle() {
     '<button type="button" class="btn ghost" data-act="new-bill" data-k="newbill">Start a new bill</button></div></section>';
 
   dom.settle.innerHTML = h;
+  // One quiet hint, the first time a receipt is shown, so the hidden paper sheet can be found.
+  if (!prefs.hinted) {
+    prefs.hinted = true; savePrefs();
+    clearTimeout(ui.hintT);
+    ui.hintT = setTimeout(function () { if (state.screen === 'settle' && !sheetOpen()) toast('Tip: press and hold the receipt to change its paper'); }, 1600);
+  }
   if (anim) {
     var hero = $('#hero', dom.settle);
     animateNumber(hero, res.grand, 900);
@@ -2358,6 +2542,7 @@ function showScreen(name) {
   ui.pendingRemove = null;
   hideTip();
   clearUndo();
+  closePaperSheet();
   save();
   renderAll();
   window.scrollTo(0, 0);
@@ -2380,13 +2565,9 @@ function settleAction(act, b) {
       if (state.paid[id]) delete state.paid[id]; else state.paid[id] = todayISO();
       commit(); updatePaidUI(); return true;
     }
-    case 'paper': {
-      var v = b.getAttribute('data-v');
-      if (PAPERS.indexOf(v) < 0) return true;
-      prefs.paper = v; savePrefs(); applyPaper();
-      dom.settle.querySelectorAll('[data-act="paper"]').forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-v') === v)); });
-      return true;
-    }
+    case 'paper': setPaper(b.getAttribute('data-v')); return true;
+    case 'paper-open': openPaperSheet(); return true;
+    case 'paper-close': closePaperSheet(); return true;
     case 'copy': copyFrom($('#summary', dom.settle), 'Copied'); return true;
     case 'new-bill': {
       if (!ui.pendingNew) {
@@ -2525,6 +2706,7 @@ function bind() {
     if (!b || b.tagName === 'INPUT' || b.tagName === 'TEXTAREA' || b.disabled) return;
     var act = b.getAttribute('data-act');
     if (act === 'pay' && Date.now() - ui.dragEnd < 500) return;   // the click that ends a swipe
+    if ((act === 'paper' || act === 'paper-close') && Date.now() - ui.lpAt < 450) return;   // the lift that ends a long press
     runAction(act, b);
   });
   document.addEventListener('input', buildInput);
@@ -2551,11 +2733,12 @@ function bind() {
   document.addEventListener('focusout', hideTip);
   window.addEventListener('scroll', hideTip, { passive: true });
   bindTouch();
+  bindPaper();
 }
 
 function init() {
   dom.wrap = $('.wrap'); dom.build = $('#screen-build'); dom.settle = $('#screen-settle'); dom.saved = $('#screen-saved');
-  dom.dock = $('#dock'); dom.toast = $('#toast'); dom.strip = $('#strip'); dom.undo = $('#undo');
+  dom.dock = $('#dock'); dom.toast = $('#toast'); dom.strip = $('#strip'); dom.undo = $('#undo'); dom.sheet = $('#sheet');
   tipEl = $('#tip');
   loadPrefs();
   applyPaper();
